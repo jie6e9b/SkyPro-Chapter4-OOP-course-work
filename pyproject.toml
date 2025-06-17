@@ -1,0 +1,44 @@
+[project]
+name = "skypro-chapter4-oop-course-work"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "jie6e9b"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.2.0"
+pytest = "^8.4.0"
+pytest-cov = "^6.2.1"
+coverage = "^7.9.1"
+black = "^25.1.0"
+isort = "^6.0.1"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+
+[tool.flake8]
+max-line-length = 88
+exclude = ".venv"
+
+[tool.pytest.ini_options]
+addopts = "--cov=."
+
+[tool.coverage.run]
+branch = true
+source = ["."]
+
