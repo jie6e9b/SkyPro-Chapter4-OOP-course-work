@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import requests
-from typing import List, Dict, Any, Optional
 import logging
+from typing import Optional, Dict, Any, List
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -96,8 +96,8 @@ class HH(Parser):
     def load_vacancies(
             self,
             keyword: str,
-            max_pages: Optional[int] = None,
             per_page: int = DEFAULT_PER_PAGE,
+            max_pages: Optional[int] = None,
             area: Optional[int] = None,
             salary_from: Optional[int] = None,
             salary_to: Optional[int] = None
@@ -105,25 +105,25 @@ class HH(Parser):
         """ Загрузка вакансий с HeadHunter
         Args: keyword: Ключевое слово для поиска
               max_pages: Максимальное количество страниц (по умолчанию 2)
-              per_page: Количество вакансий на странице
-              area: ID региона
+              per_page: Количество вакансий на странице (по умолчанию 100)
+              area: ID региона (113 Россия,1 Москва)
               salary_from: Минимальная зарплата
               salary_to: Максимальная зарплата
 
         Returns: List[Dict[str, Any]]: Список вакансий
-        Raises: ParserError: При ошибке получения данных"""
+        Raises: ValueError: При пустом ключевом слове
+                ConnectionError: Не удалось подключиться к API"""
 
+        # Проверяем ключевое слово
         if not keyword.strip():
             raise ValueError("Ключевое слово не может быть пустым")
 
+        # Определяем переменную максимальное количество страниц
         if max_pages is None:
             max_pages = 2
-
         max_pages = min(max_pages, self.MAX_PAGES)
 
-        # Проверяем подключение
-        self.connect()
-
+        # Подготовка параметров для HTTP-запроса к API HeadHunter
         params = {
             "text": keyword.strip(),
             "per_page": min(per_page, self.DEFAULT_PER_PAGE),
@@ -132,11 +132,22 @@ class HH(Parser):
 
         # Добавляем дополнительные параметры если они указаны
         if area is not None:
-            params["area"] = 113
+            params["area"] = area
         if salary_from is not None:
-            params["salary"] = 0
+            params["salary"] = salary_from
         if salary_to is not None:
-            params["salary"] = 500000
+            # HeadHunter использует отдельные параметры для min и max зарплаты
+            if salary_from and salary_to:
+                # Если указаны обе границы, используем формат "от-до"
+                params["salary_range"] = f"{salary_from}-{salary_to}"
+            else:
+                # Если только максимальная зарплата
+                params["salary_range"] = f"0-{salary_to}"
+
+        logger.info(f"Параметры HTTP - запроса к API HeadHunter - {params}")
+
+        # Проверяем подключение
+        self.connect()
 
         vacancies = []
 
@@ -150,19 +161,31 @@ class HH(Parser):
                     params=params,
                     timeout=self._timeout
                 )
+
+                # Проверяем код HTTP ответа
                 response.raise_for_status()
 
+                # Преобразуем (парсим) JSON - строку из ответа в список словарей
                 data = response.json()
+
+                # Безопасно извлекаем список вакансий по ключу "items"
+                # Если API вернет неожиданную структуру без "items",
+                # получим пустой список вместо ошибки
                 items = data.get("items", [])
 
+                # Проверяем есть ли в ответе нет "items", если нет прерываем цикл
                 if not items:
-                    logger.info("Больше вакансий не найдено")
+                    logger.info(f"Вакансий на странице {page + 1} не найдено")
                     break
 
+                # Проверяем есть ли в ответе нет "items", если нет прерываем цикл
                 vacancies.extend(items)
+                logger.info(f"Загружено {len(items)} вакансий со страницы {page + 1}")
 
                 # Проверяем, есть ли еще страницы
-                if page >= data.get("pages", 0) - 1:
+                total_pages = data.get("pages", 0)
+                if page >= total_pages - 1:
+                    logger.info(f"Достигнута последняя страница ({total_pages})")
                     break
 
             logger.info(f"Загружено {len(vacancies)} вакансий по запросу '{keyword}'")
@@ -180,4 +203,3 @@ class HH(Parser):
         """Закрытие сессии при выходе из контекста"""
         if self._session:
             self._session.close()
-

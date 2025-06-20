@@ -32,7 +32,7 @@ target-version = ['py38']
 profile = "black"
 
 [tool.flake8]
-max-line-length = 88
+max-line-length = 120
 exclude = ".venv"
 
 [tool.pytest.ini_options]
