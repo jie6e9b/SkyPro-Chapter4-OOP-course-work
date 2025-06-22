@@ -5,11 +5,14 @@ from src.storage import JSONStorage
 
 
 class UserInterface:
-    def __init__(self):
+    """
+    Класс пользовательского интерфейса для работы с вакансиями через консоль.
+    """
+    def __init__(self) -> None:
         self.api = HH()
         self.storage = JSONStorage()
 
-    def run(self):
+    def run(self) -> None:
         """Главное меню программы"""
         while True:
             print("\n=== СИСТЕМА ПОИСКА ВАКАНСИЙ ===")
@@ -50,7 +53,7 @@ class UserInterface:
         }
     }
 
-    def _search_new_vacancies(self):
+    def _search_new_vacancies(self) -> None:
         """Поиск новых вакансий через API"""
         try:
             # Получение поискового запроса
@@ -88,13 +91,10 @@ class UserInterface:
                 print("Вакансии не найдены")
 
         except Exception as e:
-            print(f"Ошибка при поиске: {e}")
-
-        except Exception as e:
             print(f"❌ Ошибка при поиске вакансий: {e}")
             return None
 
-    def _get_search_keyword(self):
+    def _get_search_keyword(self) -> str:
         """Получение и валидация поискового запроса"""
         while True:
             keyword = input("📝 Введите поисковый запрос: ").strip()
@@ -102,7 +102,7 @@ class UserInterface:
                 return keyword
             print("⚠️ Запрос не может быть пустым! Попробуйте еще раз.")
 
-    def _get_search_parameters(self):
+    def _get_search_parameters(self) -> dict:
         """Получение параметров поиска с валидацией"""
         return {
             'max_pages': self._get_int_input(
@@ -137,8 +137,9 @@ class UserInterface:
             )
         }
 
-    def _get_int_input(self, prompt, default=None, min_val=None, max_val=None, allow_none=False):
-        """Универсальная функция для получения числового ввода с валидацией"""
+    def _get_int_input(self, prompt: str, default: int | None = None, min_val: int | None = None,
+                       max_val: int | None = None, allow_none: bool = False) -> int | None:
+        """Универсальная функция получения числового ввода с проверками"""
         default_text = f" (по умолчанию: {default})" if default is not None else ""
         full_prompt = f"{prompt}{default_text}: "
 
@@ -173,7 +174,7 @@ class UserInterface:
             except ValueError:
                 print("⚠️ Введите корректное число!")
 
-    def _show_saved_vacancies(self):
+    def _show_saved_vacancies(self) -> None:
         """Показать все сохраненные вакансии"""
         vacancies = self.storage.get_vacancies()
         if vacancies:
@@ -182,7 +183,7 @@ class UserInterface:
         else:
             print("Сохраненных вакансий нет")
 
-    def _show_top_vacancies(self):
+    def _show_top_vacancies(self) -> None:
         """Показать топ N вакансий по зарплате"""
         try:
             n = int(input("Введите количество вакансий для показа: "))
@@ -199,7 +200,7 @@ class UserInterface:
         except ValueError:
             print("Введите корректное число!")
 
-    def _search_by_keyword(self):
+    def _search_by_keyword(self) -> None:
         """Поиск по ключевому слову в описании"""
         keyword = input("Введите ключевое слово для поиска: ").strip()
         if keyword:
@@ -210,14 +211,14 @@ class UserInterface:
             else:
                 print(f"Вакансий с ключевым словом '{keyword}' не найдено")
 
-    def _clear_vacancies(self):
+    def _clear_vacancies(self) -> None:
         """Очистить сохраненные вакансии"""
         confirm = input("Вы уверены, что хотите удалить все вакансии? (да/нет): ")
         if confirm.lower() in ['да', 'yes', 'y']:
             self.storage.clear_storage()
             print("Все вакансии удалены")
 
-    def _display_vacancies(self, vacancies: List[Vacancy]):
+    def _display_vacancies(self, vacancies: List[Vacancy]) -> None:
         """Отобразить список вакансий"""
         for i, vacancy in enumerate(vacancies, 1):
             salary_info = self._format_salary(vacancy)
