@@ -1,6 +1,7 @@
 import os
 import json
 from abc import ABC, abstractmethod
+from enum import unique
 from typing import List
 from src.vacancy import Vacancy
 
@@ -37,8 +38,10 @@ class JSONStorage(Storage):
     def add_vacancies(self, vacancies: List[Vacancy]):
         """Добавить вакансии в JSON файл"""
         existing = self._load_from_file()
+        existing_set = {json.dump(item, sort_keys=True) for item in existing}
         new_data = [v.to_dict() for v in vacancies]
-        existing.extend(new_data)
+        unique_new_data = [item for item in new_data if json.dump(item, sort_keys=True) not in existing_set]
+        existing.extend(unique_new_data)
         self._save_to_file(existing)
 
     def get_vacancies(self, **criteria) -> List[Vacancy]:

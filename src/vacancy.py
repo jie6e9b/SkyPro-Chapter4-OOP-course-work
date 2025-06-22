@@ -1,4 +1,5 @@
 class Vacancy:
+    __slots__ = ("title", "url", "salary_from", "salary_to", "currency", "description", "requirements")
     def __init__(self, title, url, salary_from=None, salary_to=None,
                  currency=None, description="", requirements="", **kwargs):
         """Инициализация объекта класса вакансия.
